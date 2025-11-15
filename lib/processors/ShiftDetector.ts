@@ -175,8 +175,30 @@ export class ShiftDetector {
           shiftConfig.checkOutEnd
         );
 
-        // Check if would start a DIFFERENT shift type (optimized with pre-classified shift codes)
+        // Check if would start a DIFFERENT shift type
+        // CRITICAL FIX: A burst can only start a new shift if it's at/after checkout START.
+        //
+        // For Afternoon (checkout 21:30-00:00) vs Night (check-in 21:00-22:35):
+        // - 21:02: Night check-in but BEFORE checkout starts (21:30) → assign to Afternoon
+        // - 21:37: overlap zone, in checkout → checkout priority → assign to Afternoon
+        // - 22:40: after checkout, can start Night
+        //
+        // Simple check: candidate time >= checkout start time
+        const candidateTimeNorm = candidate.time.substring(0, 5);
+        const checkOutStartNorm = shiftConfig.checkOutStart.substring(0, 5);
+
+        // For midnight-crossing checkout (e.g., 21:30-00:00), need special handling
+        // If candidate is early morning (e.g., 06:00) and checkout starts late (21:30),
+        // candidate < checkOutStart but it's actually AFTER (next day)
+        const checkOutEndNorm = shiftConfig.checkOutEnd.substring(0, 5);
+        const crossesMidnight = checkOutStartNorm > checkOutEndNorm;
+
+        const atOrAfterCheckoutStart = crossesMidnight
+          ? (candidateTimeNorm >= checkOutStartNorm || candidateTimeNorm <= checkOutEndNorm)
+          : (candidateTimeNorm >= checkOutStartNorm);
+
         const isDifferentShift = !inCurrentCheckout &&
+                                 atOrAfterCheckoutStart &&
                                  j > i &&
                                  candidate.shiftCode !== null &&
                                  candidate.shiftCode !== current.shiftCode;
@@ -256,9 +278,13 @@ export class ShiftDetector {
     shiftConfig: ShiftConfig
   ): Date {
     const windowEndTime = shiftConfig.checkOutEnd;
+    const [hours] = windowEndTime.split(':').map(Number);
 
-    // For night shift, window extends to next day
-    if (shiftCode === 'C') {
+    // Midnight (hour=0) means end of shift day, not start
+    // Night shifts also extend to next day
+    const extendsToNextDay = hours === 0 || shiftCode === 'C';
+
+    if (extendsToNextDay) {
       const nextDay = new Date(shiftDate);
       nextDay.setDate(nextDay.getDate() + 1);
       return this.combineDateTime(nextDay, windowEndTime);
