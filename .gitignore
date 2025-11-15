@@ -39,3 +39,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# development files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# documentation and plans (large files)
+plans/
+*.md
+!README.md
+
+# temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# data files (should not be in repo)
+*.xlsx
+*.csv
+# Keep essential config JSON files
+!package.json
+!tsconfig.json
+!package-lock.json
