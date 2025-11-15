@@ -145,8 +145,9 @@ export async function POST(request: NextRequest) {
 
       // Check data rows for this column
       extractedData.forEach((row) => {
-        if (row[col - 1]) {
-          maxLength = Math.max(maxLength, row[col - 1].toString().length);
+        const cellValue = row[col - 1];
+        if (cellValue !== undefined && cellValue !== null) {
+          maxLength = Math.max(maxLength, cellValue.toString().length);
         }
       });
 
