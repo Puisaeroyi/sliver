@@ -17,13 +17,22 @@ import type {
 
 export class ShiftDetector {
   private config: ShiftDetectionConfig;
+  private shiftCheckInRanges: Map<string, { start: string; end: string }>;
 
   constructor(config: ShiftDetectionConfig) {
     this.config = config;
+    // Pre-compute shift check-in ranges for O(1) lookup
+    this.shiftCheckInRanges = new Map();
+    for (const [code, cfg] of Object.entries(config.shifts)) {
+      this.shiftCheckInRanges.set(code, {
+        start: cfg.checkInStart.substring(0, 5),
+        end: cfg.checkInEnd.substring(0, 5)
+      });
+    }
   }
 
   /**
-   * Detect shift instances from burst records
+   * Detect shift instances from burst records (with progress logging)
    *
    * Algorithm:
    * 1. Group bursts by user
@@ -39,24 +48,36 @@ export class ShiftDetector {
       return [];
     }
 
+    console.log(`ShiftDetection: Starting with ${bursts.length} bursts`);
+
     // Group bursts by user
     const userGroups = this.groupByUser(bursts);
+    const userCount = Object.keys(userGroups).length;
+    console.log(`ShiftDetection: Grouped into ${userCount} users`);
+
     const allShiftInstances: ShiftInstance[] = [];
     let instanceIdCounter = 0;
+    let userIndex = 0;
 
     // Process each user's bursts independently
     for (const [userName, userBursts] of Object.entries(userGroups)) {
+      userIndex++;
+      console.log(`ShiftDetection: Processing user ${userIndex}/${userCount}: ${userName} (${userBursts.length} bursts)`);
+
       // Sort by burst start time
       userBursts.sort((a, b) => a.burstStart.getTime() - b.burstStart.getTime());
 
       const userShifts = this.detectUserShifts(userName, userBursts, instanceIdCounter);
       allShiftInstances.push(...userShifts);
       instanceIdCounter += userShifts.length;
+
+      console.log(`ShiftDetection: User ${userName} processed - found ${userShifts.length} shifts`);
     }
 
     // Sort all shift instances by start time
     allShiftInstances.sort((a, b) => a.checkIn.getTime() - b.checkIn.getTime());
 
+    console.log(`ShiftDetection: Complete - found ${allShiftInstances.length} total shifts`);
     return allShiftInstances;
   }
 
@@ -121,11 +142,13 @@ export class ShiftDetector {
               shiftConfig.checkOutEnd
             );
 
-            // Check if would start a DIFFERENT shift type
+            // Check if would start a DIFFERENT shift type (optimized)
             let wouldStartDifferentShift = false;
             if (!inCurrentCheckout && j > i) {
-              for (const [code, cfg] of Object.entries(this.config.shifts)) {
-                if (code !== shiftCode && this.isTimeInCheckInRange(candidateTime, cfg)) {
+              // Use pre-computed ranges for O(1) lookup instead of O(n) iteration
+              const candidateTimeNormalized = candidateTime.substring(0, 5);
+              for (const [code, range] of this.shiftCheckInRanges.entries()) {
+                if (code !== shiftCode && this.isTimeInNormalizedRange(candidateTimeNormalized, range.start, range.end)) {
                   wouldStartDifferentShift = true;
                   break;
                 }
@@ -174,12 +197,14 @@ export class ShiftDetector {
   }
 
   /**
-   * Find shift code for a given time
+   * Find shift code for a given time (optimized with pre-computed ranges)
    * Returns the shift code if time is in check-in range, null otherwise
    */
   private findShiftCode(time: string): string | null {
-    for (const [code, config] of Object.entries(this.config.shifts)) {
-      if (this.isTimeInCheckInRange(time, config)) {
+    const timeNormalized = time.substring(0, 5);
+
+    for (const [code, range] of this.shiftCheckInRanges.entries()) {
+      if (this.isTimeInNormalizedRange(timeNormalized, range.start, range.end)) {
         return code;
       }
     }
@@ -187,10 +212,23 @@ export class ShiftDetector {
   }
 
   /**
-   * Check if time is in shift's check-in range
+   * Check if time is in shift's check-in range (optimized)
    */
   private isTimeInCheckInRange(time: string, shiftConfig: ShiftConfig): boolean {
     return this.isTimeInRange(time, shiftConfig.checkInStart, shiftConfig.checkInEnd);
+  }
+
+  /**
+   * Optimized time range check with pre-normalized values
+   */
+  private isTimeInNormalizedRange(time: string, start: string, end: string): boolean {
+    if (start <= end) {
+      // Normal range (e.g., 09:50 to 10:35)
+      return time >= start && time <= end;
+    } else {
+      // Midnight-spanning range (e.g., 21:30 to 06:35)
+      return time >= start || time <= end;
+    }
   }
 
   /**

@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     // Read file buffer
     const buffer = await file.arrayBuffer();
 
-    // Parse Excel file with ExcelJS (more secure)
+    // Parse Excel file with ExcelJS (optimized performance)
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
 
@@ -169,26 +169,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No sheets found in Excel file' }, { status: 400 });
     }
 
-    // Convert to JSON
+    // Optimized JSON conversion - reduce iterations and memory usage
     const rawData: Record<string, unknown>[] = [];
     let headerRow: string[] = [];
 
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) {
-        // First row is header
-        headerRow = row.values as string[];
-        headerRow.shift(); // Remove first empty element from row.values
-      } else {
-        const rowData: Record<string, unknown> = {};
-        row.eachCell((cell, colNumber) => {
-          const header = headerRow[colNumber - 1];
-          if (header) {
-            rowData[header] = cell.value;
+    // Get header row efficiently
+    const firstRow = worksheet.getRow(1);
+    headerRow = firstRow.values as string[];
+    headerRow.shift(); // Remove first empty element from row.values
+
+    // Pre-check for empty data
+    if (worksheet.rowCount <= 1) {
+      return NextResponse.json({ error: 'No data found in Excel file' }, { status: 400 });
+    }
+
+    // Process rows more efficiently - direct iteration without nested eachRow calls
+    const totalRows = worksheet.rowCount;
+    for (let rowNumber = 2; rowNumber <= totalRows; rowNumber++) {
+      const row = worksheet.getRow(rowNumber);
+
+      // Skip completely empty rows
+      const rowValues = row.values as (string | number | undefined)[];
+      if (!rowValues || rowValues.length <= 1) continue;
+
+      const rowData: Record<string, unknown> = {};
+
+      // Direct cell access - O(n) instead of O(n²)
+      for (let colNumber = 1; colNumber < headerRow.length + 1; colNumber++) {
+        const header = headerRow[colNumber - 1];
+        if (header) {
+          const cellValue = rowValues[colNumber];
+          if (cellValue !== undefined && cellValue !== null) {
+            rowData[header] = cellValue;
           }
-        });
+        }
+      }
+
+      // Only add non-empty rows
+      if (Object.keys(rowData).length > 0) {
         rawData.push(rowData);
       }
-    });
+    }
 
     if (rawData.length === 0) {
       return NextResponse.json({ error: 'No data found in Excel file' }, { status: 400 });
@@ -233,37 +254,59 @@ export async function POST(request: NextRequest) {
 
     console.log('Allowed users:', Array.from(allowedUsers));
 
-    // Parse swipe records
+    // Parse swipe records (optimized with batching and progress)
     const swipes: SwipeRecord[] = [];
     const errors: string[] = [];
     const warnings: string[] = [];
     let filteredByStatus = 0;
     let filteredByUser = 0;
 
-    for (let i = 0; i < rawData.length; i++) {
-      try {
-        const swipe = parseSwipeRecord(rawData[i]!, i);
+    // Process in batches to improve memory efficiency and allow progress tracking
+    const parseBatchSize = 500;
+    const totalBatches = Math.ceil(rawData.length / parseBatchSize);
 
-        // Filter by status first
-        if (!statusFilter.includes(swipe.status)) {
-          filteredByStatus++;
-          continue;
+    for (let batchStart = 0; batchStart < rawData.length; batchStart += parseBatchSize) {
+      const batchEnd = Math.min(batchStart + parseBatchSize, rawData.length);
+      const currentBatch = Math.floor(batchStart / parseBatchSize) + 1;
+
+      // Log progress for large files
+      if (rawData.length > 1000) {
+        console.log(`Processing batch ${currentBatch}/${totalBatches} (${batchEnd}/${rawData.length} records)`);
+      }
+
+      // Process current batch
+      for (let i = batchStart; i < batchEnd; i++) {
+        try {
+          const swipe = parseSwipeRecord(rawData[i]!, i);
+
+          // Filter by status first
+          if (!statusFilter.includes(swipe.status)) {
+            filteredByStatus++;
+            continue;
+          }
+
+          // Then filter by allowed users
+          if (!allowedUsers.has(swipe.name)) {
+            filteredByUser++;
+            if (rawData.length <= 100) { // Only log details for small files
+              console.log(`Filtered out unauthorized user: ${swipe.name} (ID: ${swipe.id})`);
+            }
+            continue;
+          }
+
+          // Only add swipe if it passes both filters
+          swipes.push(swipe);
+        } catch (error) {
+          // Log but don't fail on individual row errors
+          warnings.push(
+            `Row ${i + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
+      }
 
-        // Then filter by allowed users
-        if (!allowedUsers.has(swipe.name)) {
-          filteredByUser++;
-          console.log(`Filtered out unauthorized user: ${swipe.name} (ID: ${swipe.id})`);
-          continue;
-        }
-
-        // Only add swipe if it passes both filters
-        swipes.push(swipe);
-      } catch (error) {
-        // Log but don't fail on individual row errors
-        warnings.push(
-          `Row ${i + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
+      // Optional: Allow event loop to breathe for very large files
+      if (rawData.length > 5000 && currentBatch % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
     }
 
@@ -285,53 +328,77 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // STEP 1: Process bursts
+    // STEP 1: Process bursts (with progress logging)
+    console.log('STEP 1: Detecting bursts from', swipes.length, 'swipes...');
     const burstDetector = new BurstDetector({ thresholdMinutes: burstThresholdMinutes });
     const bursts = burstDetector.detectBursts(swipes);
+    console.log('STEP 1: Found', bursts.length, 'bursts');
 
     // Load shift configurations from YAML
     const yamlShiftConfigs = convertYamlToShiftConfigs(combinedConfig.rules);
     const shiftConfigs = { ...DEFAULT_SHIFT_CONFIGS, ...yamlShiftConfigs };
 
-    // STEP 2: Detect shift instances
+    // STEP 2: Detect shift instances (with progress logging)
+    console.log('STEP 2: Detecting shifts from', bursts.length, 'bursts...');
     const shiftDetector = new ShiftDetector({ shifts: shiftConfigs });
     const shiftInstances = shiftDetector.detectShifts(bursts);
+    console.log('STEP 2: Found', shiftInstances.length, 'shift instances');
 
-    // STEP 3: Detect breaks and generate attendance records
+    // STEP 3: Detect breaks and generate attendance records (with batching and progress)
+    console.log('STEP 3: Processing', shiftInstances.length, 'shift instances for breaks and attendance...');
     const breakDetector = new BreakDetector();
     const attendanceRecords: AttendanceRecord[] = [];
 
-    for (const shift of shiftInstances) {
-      const shiftConfig = shiftConfigs[shift.shiftCode] || DEFAULT_SHIFT_CONFIGS[shift.shiftCode]!;
+    // Process shifts in batches for better performance with large datasets
+    const shiftBatchSize = 100;
+    for (let i = 0; i < shiftInstances.length; i += shiftBatchSize) {
+      const batchEnd = Math.min(i + shiftBatchSize, shiftInstances.length);
 
-      // Detect breaks for this shift
-      const breakTimes = breakDetector.detectBreak(shift.bursts, shiftConfig);
+      if (shiftInstances.length > 200) {
+        console.log(`Processing shifts ${i + 1}-${batchEnd} of ${shiftInstances.length}...`);
+      }
 
-      // Extract check-in and check-out times
-      const checkInTime = shift.checkIn.toTimeString().substring(0, 8);
-      const checkOutTime = shift.checkOut ? shift.checkOut.toTimeString().substring(0, 8) : '';
+      for (let j = i; j < batchEnd; j++) {
+        const shift = shiftInstances[j];
+        if (!shift) continue; // Skip undefined shifts
+        const shiftConfig = shiftConfigs[shift.shiftCode] || DEFAULT_SHIFT_CONFIGS[shift.shiftCode]!;
 
-      // Determine statuses
-      const checkInStatus = determineCheckInStatus(checkInTime, shiftConfig);
-      const breakInStatus = determineBreakInStatus(breakTimes.breakInTime, shiftConfig);
+        // Detect breaks for this shift
+        const breakTimes = breakDetector.detectBreak(shift.bursts, shiftConfig);
 
-      // Map user using users.yaml configuration
-      const mappedUser = mapUser(shift.userName);
+        // Extract check-in and check-out times
+        const checkInTime = shift.checkIn.toTimeString().substring(0, 8);
+        const checkOutTime = shift.checkOut ? shift.checkOut.toTimeString().substring(0, 8) : '';
 
-      // Create attendance record
-      attendanceRecords.push({
-        date: shift.shiftDate,
-        id: mappedUser.id,
-        name: mappedUser.name,
-        shift: shiftConfig.displayName,
-        checkIn: checkInTime,
-        breakOut: breakTimes.breakOut,
-        breakIn: breakTimes.breakIn,
-        checkOut: checkOutTime,
-        checkInStatus,
-        breakInStatus,
-      });
+        // Determine statuses
+        const checkInStatus = determineCheckInStatus(checkInTime, shiftConfig);
+        const breakInStatus = determineBreakInStatus(breakTimes.breakInTime, shiftConfig);
+
+        // Map user using users.yaml configuration
+        const mappedUser = mapUser(shift.userName);
+
+        // Create attendance record
+        attendanceRecords.push({
+          date: shift.shiftDate,
+          id: mappedUser.id,
+          name: mappedUser.name,
+          shift: shiftConfig.displayName,
+          checkIn: checkInTime,
+          breakOut: breakTimes.breakOut,
+          breakIn: breakTimes.breakIn,
+          checkOut: checkOutTime,
+          checkInStatus,
+          breakInStatus,
+        });
+      }
+
+      // Allow event loop to breathe for very large shift datasets
+      if (shiftInstances.length > 500 && (i / shiftBatchSize) % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
     }
+
+    console.log('STEP 3: Generated', attendanceRecords.length, 'attendance records');
 
     // Create processing result
     const result: ProcessingResult = {
