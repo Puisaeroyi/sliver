@@ -26,8 +26,8 @@ export default function AttendanceSummaryTable({ userStats, summary }: Attendanc
           <p className="font-display text-2xl font-black text-nb-green">{summary.onTimePercentage}%</p>
         </div>
         <div>
-          <p className="mb-nb-1 text-xs font-bold uppercase text-nb-gray-600">Late %</p>
-          <p className="font-display text-2xl font-black text-nb-red">{summary.latePercentage}%</p>
+          <p className="mb-nb-1 text-xs font-bold uppercase text-nb-gray-600">Deviation %</p>
+          <p className="font-display text-2xl font-black text-nb-orange">{summary.deviationPercentage}%</p>
         </div>
         <div>
           <p className="mb-nb-1 text-xs font-bold uppercase text-nb-gray-600">Avg/User</p>
@@ -47,13 +47,16 @@ export default function AttendanceSummaryTable({ userStats, summary }: Attendanc
                 Total
               </th>
               <th className="border-nb-2 border-nb-black p-nb-3 text-center text-xs font-black uppercase">
+                On Time
+              </th>
+              <th className="border-nb-2 border-nb-black p-nb-3 text-center text-xs font-black uppercase">
                 Late
               </th>
               <th className="border-nb-2 border-nb-black p-nb-3 text-center text-xs font-black uppercase">
-                On-Time
+                Soon
               </th>
               <th className="border-nb-2 border-nb-black p-nb-3 text-center text-xs font-black uppercase">
-                Late %
+                Deviation
               </th>
               <th className="border-nb-2 border-nb-black p-nb-3 text-center text-xs font-black uppercase">
                 Status
@@ -72,21 +75,22 @@ export default function AttendanceSummaryTable({ userStats, summary }: Attendanc
                 <td className="border-nb-2 border-nb-black p-nb-3 text-center font-bold text-nb-black">
                   {user.totalRecords}
                 </td>
-                <td className="border-nb-2 border-nb-black p-nb-3 text-center font-bold text-nb-red">
-                  {user.lateCount}
-                </td>
                 <td className="border-nb-2 border-nb-black p-nb-3 text-center font-bold text-nb-green">
                   {user.onTimeCount}
                 </td>
+                <td className="border-nb-2 border-nb-black p-nb-3 text-center font-bold text-nb-red">
+                  {user.lateCount}
+                </td>
+                <td className="border-nb-2 border-nb-black p-nb-3 text-center font-bold text-nb-orange">
+                  {user.soonCount}
+                </td>
                 <td className="border-nb-2 border-nb-black p-nb-3 text-center font-bold text-nb-black">
-                  {user.latePercentage}%
+                  {user.lateCount + user.soonCount}
                 </td>
                 <td className="border-nb-2 border-nb-black p-nb-3 text-center">
-                  {user.latePercentage === 0 ? (
+                  {user.deviationPercentage === 0 ? (
                     <Badge variant="success">Perfect</Badge>
-                  ) : user.latePercentage < 10 ? (
-                    <Badge variant="success">Excellent</Badge>
-                  ) : user.latePercentage < 25 ? (
+                  ) : user.deviationPercentage < 25 ? (
                     <Badge variant="warning">Good</Badge>
                   ) : (
                     <Badge variant="error">Needs Improvement</Badge>

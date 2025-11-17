@@ -2,7 +2,7 @@
 
 import { AttendanceRecord } from '@/types/attendance';
 import { transformToAnalytics } from '@/lib/analytics/dataTransformers';
-import LatePercentageChart from './LatePercentageChart';
+import DeviationAnalysisChart from './DeviationAnalysisChart';
 import AttendanceSummaryTable from './AttendanceSummaryTable';
 
 interface AttendanceAnalyticsProps {
@@ -49,9 +49,9 @@ export default function AttendanceAnalytics({ data }: AttendanceAnalyticsProps) 
         <AttendanceSummaryTable userStats={analytics.userStats} summary={analytics.summary} />
       </div>
 
-      {/* Late Percentage Chart - Single chart below table */}
+      {/* Deviation Analysis Chart - Single chart below table */}
       <div className="mb-nb-8">
-        <LatePercentageChart data={analytics.userStats} />
+        <DeviationAnalysisChart data={analytics.userStats} />
       </div>
     </div>
   );

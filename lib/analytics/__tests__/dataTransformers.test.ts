@@ -41,10 +41,10 @@ describe('Data Transformers', () => {
       name: 'Silver_Bui',
       shift: 'A',
       checkIn: '08:05:00',
-      breakOut: '12:00:00',
+      breakOut: '11:45:00',
       breakIn: '13:05:00',
       checkOut: '17:00:00',
-      status: 'Late Check-in, Late Break In',
+      status: 'Late Check-in, Leave Soon Break Out',
       totalHours: 8,
       overtime: 0,
     },
@@ -69,37 +69,58 @@ describe('Data Transformers', () => {
       checkIn: '08:00:00',
       breakOut: '12:00:00',
       breakIn: '13:00:00',
-      checkOut: '17:00:00',
-      status: 'On Time',
+      checkOut: '16:45:00',
+      status: 'Leave Soon Check Out',
       totalHours: 8,
       overtime: 0,
     },
   ];
 
   describe('calculateUserStats', () => {
-    it('should calculate correct user statistics', () => {
+    it('should calculate correct user statistics including Soon % and Deviation %', () => {
       const stats = calculateUserStats(mockRecords);
 
-      // Silver_Bui has 2 records, 1 late
+      // Silver_Bui: 2 records (1 On Time, 1 Late + Soon)
+      // Note: The second record counts as both Late AND Soon, so: 2 total - 1 late - 1 soon = 0 onTime
       const silverStats = stats.find((s) => s.userName === 'Silver_Bui');
       expect(silverStats).toEqual({
         userName: 'Silver_Bui',
         totalRecords: 2,
         lateCount: 1,
-        onTimeCount: 1,
+        onTimeCount: 0, // 2 - 1 - 1 = 0
+        soonCount: 1, // One "Leave Soon" occurrence
         latePercentage: 50,
-        onTimePercentage: 50,
+        onTimePercentage: 0, // 0/2 = 0%
+        soonPercentage: 50, // 1/2 = 50%
+        deviationPercentage: 100, // 50% + 50% = 100%
       });
 
-      // Capone has 1 record, 1 late
+      // Capone: 1 record (Late only)
       const caponeStats = stats.find((s) => s.userName === 'Capone');
       expect(caponeStats).toEqual({
         userName: 'Capone',
         totalRecords: 1,
         lateCount: 1,
         onTimeCount: 0,
+        soonCount: 0, // No "Leave Soon" occurrences
         latePercentage: 100,
         onTimePercentage: 0,
+        soonPercentage: 0,
+        deviationPercentage: 100, // 100% + 0% = 100%
+      });
+
+      // Trieu: 1 record (Soon only)
+      const trieuStats = stats.find((s) => s.userName === 'Trieu');
+      expect(trieuStats).toEqual({
+        userName: 'Trieu',
+        totalRecords: 1,
+        lateCount: 0,
+        onTimeCount: 0,
+        soonCount: 1, // One "Leave Soon" occurrence
+        latePercentage: 0,
+        onTimePercentage: 0,
+        soonPercentage: 100, // 1/1 = 100%
+        deviationPercentage: 100, // 0% + 100% = 100%
       });
     });
 
@@ -111,6 +132,15 @@ describe('Data Transformers', () => {
     it('should handle empty records', () => {
       const stats = calculateUserStats([]);
       expect(stats).toEqual([]);
+    });
+
+    it('should ensure percentages sum to 100% for each user', () => {
+      const stats = calculateUserStats(mockRecords);
+
+      stats.forEach(user => {
+        const total = user.onTimePercentage + user.latePercentage + user.soonPercentage;
+        expect(total).toBeCloseTo(100, 1);
+      });
     });
   });
 
@@ -195,15 +225,18 @@ describe('Data Transformers', () => {
   });
 
   describe('generateSummaryStats', () => {
-    it('should calculate correct summary statistics', () => {
+    it('should calculate correct summary statistics including Soon % and Deviation %', () => {
       const summary = generateSummaryStats(mockRecords);
 
       expect(summary).toEqual({
         totalRecords: 5,
         totalLate: 2, // Silver_Bui late on day 2, Capone late on day 1
-        totalOnTime: 3,
-        latePercentage: 40,
-        onTimePercentage: 60,
+        totalOnTime: 1, // Only Minh (Silver_Bui day 1 has "Leave Soon" but not "Late", so it's counted as On Time)
+        totalSoon: 2, // Silver_Bui (Leave Soon Break Out), Trieu (Leave Soon Check Out)
+        latePercentage: 40, // 2/5 = 40%
+        onTimePercentage: 20, // 1/5 = 20%
+        soonPercentage: 40, // 2/5 = 40%
+        deviationPercentage: 80, // 40% + 40% = 80%
         averageAttendance: 1.3, // 5 records / 4 unique users = 1.25 rounded to 1.3
         uniqueUsers: 4,
       });
@@ -215,11 +248,20 @@ describe('Data Transformers', () => {
         totalRecords: 0,
         totalLate: 0,
         totalOnTime: 0,
+        totalSoon: 0,
         latePercentage: 0,
         onTimePercentage: 0,
+        soonPercentage: 0,
+        deviationPercentage: 0,
         averageAttendance: 0,
         uniqueUsers: 0,
       });
+    });
+
+    it('should ensure summary percentages sum to 100%', () => {
+      const summary = generateSummaryStats(mockRecords);
+      const total = summary.onTimePercentage + summary.latePercentage + summary.soonPercentage;
+      expect(total).toBeCloseTo(100, 1);
     });
 
     it('should count unique users correctly', () => {

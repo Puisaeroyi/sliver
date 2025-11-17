@@ -154,8 +154,11 @@ export interface UserStats {
   totalRecords: number;
   lateCount: number;
   onTimeCount: number;
-  latePercentage: number;
-  onTimePercentage: number;
+  soonCount: number;              // Number of "Leave Soon" occurrences
+  latePercentage: number;         // Late percentage (existing)
+  onTimePercentage: number;       // On Time percentage (existing)
+  soonPercentage: number;          // Leave Soon percentage
+  deviationPercentage: number;     // Total deviation = Late % + Soon %
 }
 
 export interface ShiftStats {
@@ -174,8 +177,11 @@ export interface SummaryStats {
   totalRecords: number;
   totalLate: number;
   totalOnTime: number;
+  totalSoon: number;               // Total "Leave Soon" across all users
   latePercentage: number;
   onTimePercentage: number;
+  soonPercentage: number;          // Overall "Leave Soon" percentage
+  deviationPercentage: number;     // Overall deviation = Late % + Soon %
   averageAttendance: number;
   uniqueUsers: number;
 }

@@ -32,22 +32,34 @@ export function calculateUserStats(records: AttendanceRecord[]): UserStats[] {
   const userStats: UserStats[] = Object.entries(userGroups).map(([userName, userRecords]) => {
     const totalRecords = userRecords.length;
 
-    // Count late records (status contains "Late")
+    // Enhanced status detection
     const lateCount = userRecords.filter(
       (r) => r.status && r.status.includes('Late')
     ).length;
 
-    const onTimeCount = totalRecords - lateCount;
+    const soonCount = userRecords.filter(
+      (r) => r.status && r.status.includes('Leave Soon')
+    ).length;
+
+    // On Time = remaining records
+    const onTimeCount = totalRecords - lateCount - soonCount;
+
+    // Calculate percentages
     const latePercentage = totalRecords > 0 ? (lateCount / totalRecords) * 100 : 0;
+    const soonPercentage = totalRecords > 0 ? (soonCount / totalRecords) * 100 : 0;
     const onTimePercentage = totalRecords > 0 ? (onTimeCount / totalRecords) * 100 : 0;
+    const deviationPercentage = latePercentage + soonPercentage;
 
     return {
       userName,
       totalRecords,
       lateCount,
       onTimeCount,
-      latePercentage: Math.round(latePercentage * 10) / 10, // Round to 1 decimal
+      soonCount,
+      latePercentage: Math.round(latePercentage * 10) / 10,
       onTimePercentage: Math.round(onTimePercentage * 10) / 10,
+      soonPercentage: Math.round(soonPercentage * 10) / 10,
+      deviationPercentage: Math.round(deviationPercentage * 10) / 10,
     };
   });
 
@@ -139,25 +151,34 @@ export function calculateTrends(records: AttendanceRecord[]): TrendData[] {
 export function generateSummaryStats(records: AttendanceRecord[]): SummaryStats {
   const totalRecords = records.length;
 
-  // Count late records
+  // Enhanced status detection
   const totalLate = records.filter(
     (r) => r.status && r.status.includes('Late')
   ).length;
 
-  const totalOnTime = totalRecords - totalLate;
+  const totalSoon = records.filter(
+    (r) => r.status && r.status.includes('Leave Soon')
+  ).length;
 
+  const totalOnTime = totalRecords - totalLate - totalSoon;
+
+  // Calculate percentages
   const latePercentage = totalRecords > 0
     ? Math.round((totalLate / totalRecords) * 100 * 10) / 10
+    : 0;
+
+  const soonPercentage = totalRecords > 0
+    ? Math.round((totalSoon / totalRecords) * 100 * 10) / 10
     : 0;
 
   const onTimePercentage = totalRecords > 0
     ? Math.round((totalOnTime / totalRecords) * 100 * 10) / 10
     : 0;
 
-  // Get unique users
-  const uniqueUsers = new Set(records.map((r) => r.name)).size;
+  const deviationPercentage = latePercentage + soonPercentage;
 
-  // Calculate average attendance per user
+  // Get unique users and calculate average attendance
+  const uniqueUsers = new Set(records.map((r) => r.name)).size;
   const averageAttendance = uniqueUsers > 0
     ? Math.round((totalRecords / uniqueUsers) * 10) / 10
     : 0;
@@ -166,8 +187,11 @@ export function generateSummaryStats(records: AttendanceRecord[]): SummaryStats 
     totalRecords,
     totalLate,
     totalOnTime,
+    totalSoon,
     latePercentage,
     onTimePercentage,
+    soonPercentage,
+    deviationPercentage,
     averageAttendance,
     uniqueUsers,
   };
