@@ -83,6 +83,20 @@ export interface BreakTimes {
 }
 
 /**
+ * Metadata for a missing timestamp field
+ */
+export interface MissingTimestamp {
+  field: "checkIn" | "checkOut" | "breakOut" | "breakIn";
+  expectedTime?: string; // From shift config (e.g., "14:00:00")
+  severity: "low" | "medium" | "high";
+}
+
+/**
+ * Data quality classification for attendance records
+ */
+export type DataQuality = "complete" | "partial" | "critical";
+
+/**
  * A shift instance is a specific occurrence of a shift for a user
  */
 export interface ShiftInstance {
@@ -96,7 +110,7 @@ export interface ShiftInstance {
 }
 
 /**
- * Final attendance record output (v10.1)
+ * Final attendance record output (v10.1 + v2 extensions)
  */
 export interface AttendanceRecord {
   date: Date;
@@ -110,6 +124,19 @@ export interface AttendanceRecord {
   status: string; // Consolidated deviation status (e.g., "On Time", "Late Check-in", "Leave Soon Break Out, Late Break In")
   totalHours?: number;
   overtime?: number;
+
+  // v2: Missing timestamp handling (optional for backward compatibility)
+  missingTimestamps?: MissingTimestamp[];
+  dataQuality?: DataQuality;
+  requiresReview?: boolean;
+  completenessPercentage?: number;
+
+  // New: Individual deviation columns for cell-level highlighting
+  checkInLate?: string;        // "Late" or ""
+  breakOutEarly?: string;      // "Early" or ""
+  breakInLate?: string;        // "Late" or ""
+  checkOutEarly?: string;      // "Early" or ""
+  missedPunch?: string;        // Comma-separated missing fields
 }
 
 /**
@@ -141,9 +168,11 @@ export interface ProcessingResult {
   burstsDetected: number;
   shiftInstancesFound: number;
   attendanceRecordsGenerated: number;
+  deviationRecordsCount?: number;
   errors: string[];
   warnings: string[];
   outputData: AttendanceRecord[];
+  deviationData?: AttendanceRecord[];
 }
 
 /**

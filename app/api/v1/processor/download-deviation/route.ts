@@ -1,11 +1,12 @@
 /**
- * Download API Route
- * POST /api/v1/processor/download
- * Generates and downloads Excel file from processed attendance data
+ * Deviation Performance Download API Route
+ * POST /api/v1/processor/download-deviation
+ * Generates Excel with filtered attendance records (Status contains "Late" or "Soon")
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
+import type { AttendanceRecord } from '@/types/attendance';
 import fs from 'fs/promises';
 import path from 'path';
 import { parseDeviations, getCellBackgroundColor, applyCellStyle, applyHeaderStyle } from '@/lib/utils/deviationParser';
@@ -14,7 +15,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Generate and download Excel file from attendance records
+ * Generate and download deviation summary Excel file
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,14 +31,14 @@ export async function POST(request: NextRequest) {
 
     if (data.length === 0) {
       return NextResponse.json(
-        { error: 'No data to export' },
+        { error: 'No deviation records to export' },
         { status: 400 }
       );
     }
 
-    // Create new Excel workbook
+    // Create Excel workbook
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Attendance Records');
+    const worksheet = workbook.addWorksheet('Deviation Summary');
 
     // Define headers with new column structure
     const headers = [
@@ -59,20 +60,32 @@ export async function POST(request: NextRequest) {
     // Add header row
     worksheet.addRow(headers);
 
-    // Style the header row
+    // Style header row
     const headerRow = worksheet.getRow(1);
     headerRow.eachCell((cell) => {
-      applyHeaderStyle(cell);
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFDC3545' }, // Red background
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } },
+      };
     });
 
     // Add data rows with cell highlighting
-    data.forEach((record) => {
+    (data as AttendanceRecord[]).forEach((record) => {
       // Parse deviations for cell styling
       const deviationFlags = parseDeviations(record.status || '');
 
       // Build row data with new deviation columns
       const rowData = [
-        record.date ? new Date(record.date).toLocaleDateString('en-CA') : '', // YYYY-MM-DD format
+        record.date ? new Date(record.date).toLocaleDateString('en-CA') : '',
         record.id || '',
         record.name || '',
         record.shift || '',
@@ -91,25 +104,27 @@ export async function POST(request: NextRequest) {
 
       // Apply cell-level styling with highlighting
       row.eachCell((cell, colNum) => {
-        let backgroundColor = '';
+        let backgroundColor = 'FFFFC7CE'; // Default light red for deviation rows
 
         // Apply highlighting to time columns based on deviations
         switch (colNum) {
           case 5: // Check In column
-            backgroundColor = getCellBackgroundColor(deviationFlags, record.checkIn || '', 'checkIn');
+            backgroundColor = getCellBackgroundColor(deviationFlags, record.checkIn || '', 'checkIn') || 'FFFFC7CE';
             break;
           case 6: // Break Out column
-            backgroundColor = getCellBackgroundColor(deviationFlags, record.breakOut || '', 'breakOut');
+            backgroundColor = getCellBackgroundColor(deviationFlags, record.breakOut || '', 'breakOut') || 'FFFFC7CE';
             break;
           case 7: // Break In column
-            backgroundColor = getCellBackgroundColor(deviationFlags, record.breakIn || '', 'breakIn');
+            backgroundColor = getCellBackgroundColor(deviationFlags, record.breakIn || '', 'breakIn') || 'FFFFC7CE';
             break;
           case 8: // Check Out column
-            backgroundColor = getCellBackgroundColor(deviationFlags, record.checkOut || '', 'checkOut');
+            backgroundColor = getCellBackgroundColor(deviationFlags, record.checkOut || '', 'checkOut') || 'FFFFC7CE';
             break;
-          case 13: // Missed Punch column - light gray for missing punches
+          case 13: // Missed Punch column
             if (record.missedPunch) {
-              backgroundColor = 'FFE0E0E0'; // Light gray
+              backgroundColor = 'FFE0E0E0'; // Light gray for missing punches
+            } else {
+              backgroundColor = 'FFFFC7CE'; // Light red for deviation rows
             }
             break;
         }
@@ -139,7 +154,7 @@ export async function POST(request: NextRequest) {
     const buffer = await workbook.xlsx.writeBuffer();
 
     // File name
-    const fileName = `attendance_records_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `Deviation_Summary_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     // Save to server directory (if configured)
     const outputDir = process.env.EXCEL_OUTPUT_DIR;
@@ -155,14 +170,14 @@ export async function POST(request: NextRequest) {
         }
 
         await fs.writeFile(fullPath, buffer);
-        console.log(`✅ Main Excel saved to: ${fullPath}`);
+        console.log(`✅ Deviation Excel saved to: ${fullPath}`);
       } catch (error) {
         console.error(`❌ Failed to save Excel to ${fullPath}:`, error);
         // Continue with browser download even if save fails
       }
     }
 
-    // Return Excel file as response (browser download)
+    // Return Excel file (browser download)
     return new NextResponse(buffer as ArrayBuffer, {
       status: 200,
       headers: {
@@ -171,10 +186,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Download error:', error);
+    console.error('Deviation download error:', error);
     return NextResponse.json(
       {
-        error: 'Failed to generate Excel file',
+        error: 'Failed to generate deviation summary',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }

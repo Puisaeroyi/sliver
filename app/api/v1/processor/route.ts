@@ -10,12 +10,17 @@ import { ShiftDetector } from '@/lib/processors/ShiftDetector';
 import { BreakDetector } from '@/lib/processors/BreakDetector';
 import { parseSwipeRecord, validateRequiredColumns } from '@/lib/utils/dataParser';
 import { loadCombinedConfig, createUserMapper, convertYamlToShiftConfigs } from '@/lib/config/yamlLoader';
+import { FEATURES } from '@/lib/config/features';
+import { determineShiftStatusV2 } from '@/lib/processors/StatusDeterminationV2';
+import { parseDeviations, getDeviationText, getMissedPunch } from '@/lib/utils/deviationParser';
 import type {
   ProcessingResult,
   SwipeRecord,
   RuleConfig,
   ShiftConfig,
   AttendanceRecord,
+  MissingTimestamp,
+  DataQuality,
 } from '@/types/attendance';
 
 export const runtime = 'nodejs';
@@ -371,6 +376,8 @@ export async function POST(request: NextRequest) {
 
     // STEP 3: Detect breaks and generate attendance records (with batching and progress)
     console.log('STEP 3: Processing', shiftInstances.length, 'shift instances for breaks and attendance...');
+    console.log('Feature Flag - Missing Timestamp Handling:', FEATURES.MISSING_TIMESTAMP_HANDLING ? 'ENABLED (v2)' : 'DISABLED (stable)');
+
     const breakDetector = new BreakDetector();
     const attendanceRecords: AttendanceRecord[] = [];
 
@@ -398,17 +405,48 @@ export async function POST(request: NextRequest) {
         // Map user using users.yaml configuration
         const mappedUser = mapUser(shift.userName);
 
-        // Determine consolidated status for all 4 attendance points
-        const status = determineShiftStatus(
-          checkInTime,
-          breakTimes.breakOut,
-          breakTimes.breakIn,
-          checkOutTime,
-          shiftConfig
-        );
+        // Determine consolidated status using appropriate algorithm
+        let status: string;
+        let v2Metadata: {
+          missingTimestamps?: MissingTimestamp[];
+          dataQuality?: DataQuality;
+          requiresReview?: boolean;
+          completenessPercentage?: number;
+        } = {};
+
+        if (FEATURES.MISSING_TIMESTAMP_HANDLING) {
+          // Use v2 algorithm with missing timestamp support
+          const v2Result = determineShiftStatusV2(
+            checkInTime,
+            breakTimes.breakOut || null,
+            breakTimes.breakIn || null,
+            checkOutTime || null,
+            shiftConfig
+          );
+
+          status = v2Result.status;
+          v2Metadata = {
+            missingTimestamps: v2Result.missingTimestamps,
+            dataQuality: v2Result.dataQuality,
+            requiresReview: v2Result.requiresReview,
+            completenessPercentage: v2Result.completenessPercentage
+          };
+        } else {
+          // Use v1 algorithm (stable)
+          status = determineShiftStatus(
+            checkInTime,
+            breakTimes.breakOut,
+            breakTimes.breakIn,
+            checkOutTime,
+            shiftConfig
+          );
+        }
+
+        // Parse deviations for new column structure
+        const deviationFlags = parseDeviations(status);
 
         // Create attendance record
-        attendanceRecords.push({
+        const attendanceRecord: AttendanceRecord = {
           date: shift.shiftDate,
           id: mappedUser.id,
           name: mappedUser.name,
@@ -418,7 +456,17 @@ export async function POST(request: NextRequest) {
           breakIn: breakTimes.breakIn,
           checkOut: checkOutTime,
           status,
-        });
+          // Include v2 metadata only if feature is enabled
+          ...v2Metadata,
+          // Add new deviation columns
+          checkInLate: getDeviationText(deviationFlags, 'checkIn'),
+          breakOutEarly: getDeviationText(deviationFlags, 'breakOut'),
+          breakInLate: getDeviationText(deviationFlags, 'breakIn'),
+          checkOutEarly: getDeviationText(deviationFlags, 'checkOut'),
+          missedPunch: getMissedPunch(status)
+        };
+
+        attendanceRecords.push(attendanceRecord);
       }
 
       // Allow event loop to breathe for very large shift datasets
@@ -429,6 +477,33 @@ export async function POST(request: NextRequest) {
 
     console.log('STEP 3: Generated', attendanceRecords.length, 'attendance records');
 
+    // STEP 4: Enhanced analysis for v2 algorithm
+    let incompleteRecords = 0;
+    let recordsRequiringReview = 0;
+
+    if (FEATURES.MISSING_TIMESTAMP_HANDLING) {
+      incompleteRecords = attendanceRecords.filter(record =>
+        record.completenessPercentage && record.completenessPercentage < 100
+      ).length;
+
+      recordsRequiringReview = attendanceRecords.filter(record =>
+        record.requiresReview === true
+      ).length;
+
+      console.log('STEP 4a: v2 Analysis - Incomplete:', incompleteRecords, 'Records requiring review:', recordsRequiringReview);
+    }
+
+    // STEP 5: Filter deviation records
+    // Include records with:
+    // - Time deviations (Late/Soon)
+    // - Missing timestamps requiring review (when v2 enabled)
+    const deviationRecords = attendanceRecords.filter(record => {
+      const hasDeviation = record.status.includes('Late') || record.status.includes('Soon');
+      const needsReview = FEATURES.MISSING_TIMESTAMP_HANDLING && record.requiresReview === true;
+      return hasDeviation || needsReview;
+    });
+    console.log('STEP 5: Filtered', deviationRecords.length, 'deviation records (deviations + review required)');
+
     // Create processing result
     const result: ProcessingResult = {
       success: true,
@@ -436,9 +511,11 @@ export async function POST(request: NextRequest) {
       burstsDetected: bursts.length,
       shiftInstancesFound: shiftInstances.length,
       attendanceRecordsGenerated: attendanceRecords.length,
+      deviationRecordsCount: deviationRecords.length,
       errors: errors.length > 0 ? errors.slice(0, 10) : [],
       warnings: warnings.length > 0 ? warnings.slice(0, 10) : [],
       outputData: attendanceRecords,
+      deviationData: deviationRecords,
     };
 
     return NextResponse.json({

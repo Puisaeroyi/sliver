@@ -49,15 +49,15 @@ grouping_logic:
     - "Date column shows shift START date, not individual swipe dates"
   
   shift_boundaries:
-    A_shift:  # Morning: 06:00-14:00
+    A_shift:  # A Shift: 06:00-14:00
       shift_date: "Calendar date of Check-in"
       activity_window: "05:00 on shift_date THROUGH 16:00 on shift_date"
 
-    B_shift:  # Afternoon: 14:00-22:00
+    B_shift:  # B Shift: 14:00-22:00
       shift_date: "Calendar date of Check-in"
       activity_window: "13:00 on shift_date THROUGH 00:00 on (shift_date + 1)"
 
-    C_shift:  # Night: 22:00-06:00 (CROSSES MIDNIGHT)
+    C_shift:  # C Shift: 22:00-06:00 (CROSSES MIDNIGHT)
       shift_date: "Calendar date of Check-in"
       activity_window: "21:00 on shift_date THROUGH 08:00 on (shift_date + 1)"
       special_handling: "All next-day swipes before 08:00 belong to previous day's shift"
@@ -78,7 +78,7 @@ burst_detection:
 shift_structure:
   shifts:
     A:
-      name: "Morning"
+      name: "A"
       window: "06:00-14:00"
       check_in:
         search_range: "05:00-06:35"      # Extended: 1 hour before shift start
@@ -90,7 +90,7 @@ shift_structure:
         expected_time: "14:00:00"        # Target check-out time (Leave Soon if < this)
         
     B:
-      name: "Afternoon"
+      name: "B"
       window: "14:00-22:00"
       check_in:
         search_range: "13:00-14:35"      # Extended: 1 hour before shift start
@@ -102,7 +102,7 @@ shift_structure:
         expected_time: "22:00:00"        # Target check-out time (Leave Soon if < this)
         
     C:
-      name: "Night"
+      name: "C"
       window: "22:00-06:00"
       check_in:
         search_range: "21:00-22:35"      # Extended: 1 hour before shift start

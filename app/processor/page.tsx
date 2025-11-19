@@ -21,7 +21,9 @@ interface ProcessingResult {
     burstsDetected: number;
     shiftInstancesFound: number;
     attendanceRecordsGenerated: number;
+    deviationRecordsCount?: number;
     outputData?: AttendanceRecord[];
+    deviationData?: AttendanceRecord[];
   };
   message?: string;
 }
@@ -30,6 +32,7 @@ export default function ProcessorPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloadingDeviation, setIsDownloadingDeviation] = useState(false);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,6 +149,41 @@ export default function ProcessorPage() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to download Excel file');
+    }
+  };
+
+  const handleDownloadDeviation = async (data: AttendanceRecord[]) => {
+    setIsDownloadingDeviation(true);
+    setError(null);
+
+    try {
+      // Send pre-filtered deviation data to API for Excel generation
+      const response = await fetch('/api/v1/processor/download-deviation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate deviation summary');
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Deviation_Summary_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to download deviation summary');
+    } finally {
+      setIsDownloadingDeviation(false);
     }
   };
 
@@ -294,9 +332,9 @@ export default function ProcessorPage() {
                     <p className="mt-nb-4 text-sm text-nb-gray-600">{result.message}</p>
                   )}
 
-                  {/* Download button */}
+                  {/* Download buttons */}
                   {result?.result?.outputData && result.result.outputData.length > 0 && (
-                    <div className="mt-nb-6">
+                    <div className="mt-nb-6 grid grid-cols-1 gap-nb-4 md:grid-cols-2">
                       <Button
                         variant="primary"
                         size="lg"
@@ -304,6 +342,18 @@ export default function ProcessorPage() {
                         onClick={() => handleDownloadExcel(result.result?.outputData || [])}
                       >
                         <span className="mr-nb-2">Download Excel Results</span>
+                        <ArrowRight className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        className="w-full"
+                        onClick={() => handleDownloadDeviation(result.result?.deviationData || [])}
+                        disabled={isDownloadingDeviation || !result.result?.deviationData || result.result.deviationData.length === 0}
+                      >
+                        <span className="mr-nb-2">
+                          {isDownloadingDeviation ? 'Generating...' : 'Download Deviation Summary'}
+                        </span>
                         <ArrowRight className="h-5 w-5" />
                       </Button>
                     </div>
