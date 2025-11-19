@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           throw new Error('Invalid file path - path traversal detected');
         }
 
-        await fs.writeFile(fullPath, buffer);
+        await fs.writeFile(fullPath, buffer as unknown as Buffer);
         console.log(`✅ Main Excel saved to: ${fullPath}`);
       } catch (error) {
         console.error(`❌ Failed to save Excel to ${fullPath}:`, error);
