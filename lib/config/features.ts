@@ -34,10 +34,10 @@ export const FEATURES = {
    * - Calculates completeness percentage
    *
    * Environment variable: NEXT_PUBLIC_MISSING_TS_HANDLING
-   * Default: false (stable algorithm)
+   * Default: true (enhanced algorithm with missing timestamp support)
    */
   MISSING_TIMESTAMP_HANDLING:
-    process.env.NEXT_PUBLIC_MISSING_TS_HANDLING === 'true',
+    process.env.NEXT_PUBLIC_MISSING_TS_HANDLING !== 'false',
 } as const;
 
 /**
