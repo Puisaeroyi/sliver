@@ -18,9 +18,11 @@ import type {
 export class ShiftDetector {
   private config: ShiftDetectionConfig;
   private shiftCheckInRanges: Map<string, { start: string; end: string }>;
+  private userMappings: Record<string, { outputName: string; outputId: string; forcedShift?: string }>;
 
-  constructor(config: ShiftDetectionConfig) {
+  constructor(config: ShiftDetectionConfig, userMappings: Record<string, { outputName: string; outputId: string; forcedShift?: string }> = {}) {
     this.config = config;
+    this.userMappings = userMappings;
     // Pre-compute shift check-in ranges for O(1) lookup
     this.shiftCheckInRanges = new Map();
     for (const [code, cfg] of Object.entries(config.shifts)) {
@@ -102,7 +104,7 @@ export class ShiftDetector {
    * Pre-classify all bursts with their potential shift codes
    * Complexity: O(n)
    */
-  private classifyBursts(bursts: BurstRecord[]): Array<{
+  private classifyBursts(bursts: BurstRecord[], username?: string): Array<{
     burst: BurstRecord;
     time: string;
     shiftCode: string | null;
@@ -111,7 +113,7 @@ export class ShiftDetector {
     return bursts.map(burst => ({
       burst,
       time: this.extractTime(burst.burstStart),
-      shiftCode: this.findShiftCode(this.extractTime(burst.burstStart)),
+      shiftCode: this.findShiftCode(this.extractTime(burst.burstStart), username),
       assigned: false
     }));
   }
@@ -137,7 +139,7 @@ export class ShiftDetector {
     let instanceId = startingInstanceId;
 
     // Step 1: Pre-classify all bursts with shift codes [O(n)]
-    const classifications = this.classifyBursts(bursts);
+    const classifications = this.classifyBursts(bursts, userName);
 
     // Step 2: Single pass to create shift instances [O(n)]
     // Each burst processed exactly once via 'assigned' flag
@@ -235,10 +237,22 @@ export class ShiftDetector {
   }
 
   /**
-   * Find shift code for a given time (optimized with pre-computed ranges)
-   * Returns the shift code if time is in check-in range, null otherwise
+   * Find shift code for a given time with user-specific forced shift support
+   * Returns the shift code if time is in check-in range OR user has forced shift, null otherwise
    */
-  private findShiftCode(time: string): string | null {
+  private findShiftCode(time: string, username?: string): string | null {
+    // Check if user has a forced shift assignment
+    if (username && this.userMappings[username]?.forcedShift) {
+      const forcedShift = this.userMappings[username].forcedShift;
+      // Validate that the forced shift exists in configuration
+      if (this.config.shifts[forcedShift]) {
+        return forcedShift;
+      } else {
+        console.warn(`⚠️ Warning: Forced shift '${forcedShift}' for user '${username}' not found in shift configuration`);
+      }
+    }
+
+    // Normal shift detection based on time ranges
     const timeNormalized = time.substring(0, 5);
 
     for (const [code, range] of this.shiftCheckInRanges.entries()) {
