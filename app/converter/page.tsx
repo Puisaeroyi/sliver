@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, ChangeEvent, DragEvent } from 'react';
-import { FileText, ArrowRight, AlertCircle } from 'lucide-react';
+import { FileText, ArrowRight, AlertCircle, Upload } from 'lucide-react';
 import {
   Button,
   Card,
@@ -130,21 +130,21 @@ export default function ConverterPage() {
   };
 
   return (
-    <div className="nb-container py-nb-16">
-      <div className="mb-nb-12 text-center">
-        <div className="mb-nb-6 inline-block rounded-nb bg-nb-blue p-nb-4 border-nb-4 border-nb-black shadow-nb">
-          <FileText className="h-12 w-12 text-nb-white" />
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="text-center space-y-4">
+        <div className="inline-flex items-center justify-center p-4 rounded-full bg-primary/10">
+          <FileText className="h-8 w-8 text-primary" />
         </div>
-        <h1 className="mb-nb-4 font-display text-4xl font-black uppercase tracking-tight text-nb-black">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           CSV to XLSX Converter
         </h1>
-        <p className="text-lg text-nb-gray-600">
-          Convert CSV files to Excel format with column extraction (ID, Name, Date, Time, Type, Status)
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Convert CSV files to Excel format with column extraction
         </p>
       </div>
 
-      <div className="mx-auto max-w-4xl">
-        <Card variant="primary">
+      <div className="mx-auto max-w-4xl space-y-8">
+        <Card className="border-primary/20 shadow-lg">
           <CardHeader>
             <CardTitle>Upload Your CSV File</CardTitle>
             <CardDescription>
@@ -152,7 +152,7 @@ export default function ConverterPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-nb-6">
+            <div className="space-y-6">
               {/* Hidden file input */}
               <input
                 ref={fileInputRef}
@@ -167,30 +167,45 @@ export default function ConverterPage() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`cursor-pointer border-nb-4 border-dashed p-nb-12 text-center transition-colors ${
-                  isDragging
-                    ? 'border-nb-blue bg-nb-blue/20'
+                className={`cursor-pointer border-2 border-dashed rounded-xl p-12 text-center transition-all duration-200 ${isDragging
+                    ? 'border-primary bg-primary/5'
                     : file
-                      ? 'border-nb-blue bg-nb-blue/5'
-                      : 'border-nb-gray-300 bg-nb-gray-50 hover:border-nb-blue hover:bg-nb-blue/5'
-                }`}
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary hover:bg-secondary/50'
+                  }`}
+                onClick={!file ? handleChooseFile : undefined}
               >
                 {file ? (
-                  <div>
-                    <FileText className="mx-auto mb-nb-4 h-16 w-16 text-nb-blue" />
-                    <p className="mb-nb-2 text-lg font-bold text-nb-black">{file.name}</p>
-                    <p className="mb-nb-4 text-sm text-nb-gray-600">
-                      {(file.size / 1024).toFixed(2)} KB
-                    </p>
-                    <Badge variant="primary">File loaded</Badge>
+                  <div className="space-y-4">
+                    <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <FileText className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-foreground">{file.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(file.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      <Badge variant="primary">File loaded</Badge>
+                      <Button variant="outline" size="sm" onClick={handleChooseFile}>
+                        Change File
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <div>
-                    <FileText className="mx-auto mb-nb-4 h-16 w-16 text-nb-gray-400" />
-                    <p className="mb-nb-4 text-lg font-bold text-nb-black">
-                      Drag and drop your CSV file here
-                    </p>
-                    <p className="mb-nb-6 text-sm text-nb-gray-600">or click to browse files</p>
+                  <div className="space-y-4">
+                    <div className="mx-auto h-16 w-16 rounded-full bg-secondary flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-foreground">
+                        Drag and drop your CSV file here
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        or click to browse files
+                      </p>
+                    </div>
                     <Button variant="primary" type="button" onClick={handleChooseFile}>
                       Choose File
                     </Button>
@@ -200,16 +215,14 @@ export default function ConverterPage() {
 
               {/* Error message */}
               {error && (
-                <div className="rounded-nb bg-nb-red/10 border-nb-2 border-nb-red p-nb-4">
-                  <div className="flex items-center gap-nb-3">
-                    <AlertCircle className="h-5 w-5 text-nb-red" />
-                    <p className="text-sm font-medium text-nb-red">{error}</p>
-                  </div>
+                <div className="rounded-lg bg-destructive/10 p-4 flex items-center gap-3 text-destructive">
+                  <AlertCircle className="h-5 w-5" />
+                  <p className="text-sm font-medium">{error}</p>
                 </div>
               )}
 
               {/* Configuration inputs */}
-              <div className="grid gap-nb-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <Input
                   label="Delimiter"
                   placeholder=","
@@ -226,36 +239,36 @@ export default function ConverterPage() {
 
               {/* Convert button */}
               <Button
-                variant="success"
+                variant="primary"
                 size="lg"
                 className="w-full"
                 onClick={handleConvert}
                 disabled={!file || isConverting}
               >
-                <span className="mr-nb-2">{isConverting ? 'Converting...' : 'Convert File'}</span>
-                <ArrowRight className="h-5 w-5" />
+                <span className="mr-2">{isConverting ? 'Converting...' : 'Convert File'}</span>
+                {!isConverting && <ArrowRight className="h-4 w-4" />}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <div className="mt-nb-8 grid gap-nb-6 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
-            <CardContent className="p-nb-6 text-center">
-              <div className="mb-nb-2 font-display text-3xl font-black text-nb-blue">Fast</div>
-              <p className="text-sm text-nb-gray-600">Process files in seconds</p>
+            <CardContent className="p-6 text-center space-y-2">
+              <div className="text-3xl font-bold text-primary">Fast</div>
+              <p className="text-sm text-muted-foreground">Process files in seconds</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-nb-6 text-center">
-              <div className="mb-nb-2 font-display text-3xl font-black text-nb-green">Accurate</div>
-              <p className="text-sm text-nb-gray-600">100% data integrity</p>
+            <CardContent className="p-6 text-center space-y-2">
+              <div className="text-3xl font-bold text-emerald-500">Accurate</div>
+              <p className="text-sm text-muted-foreground">100% data integrity</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-nb-6 text-center">
-              <div className="mb-nb-2 font-display text-3xl font-black text-nb-purple">Secure</div>
-              <p className="text-sm text-nb-gray-600">Your data stays private</p>
+            <CardContent className="p-6 text-center space-y-2">
+              <div className="text-3xl font-bold text-violet-500">Secure</div>
+              <p className="text-sm text-muted-foreground">Your data stays private</p>
             </CardContent>
           </Card>
         </div>

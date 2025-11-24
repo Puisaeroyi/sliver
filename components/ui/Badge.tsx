@@ -9,14 +9,14 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, variant = 'default', children, ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center px-nb-3 py-nb-1 text-xs font-bold uppercase tracking-wide border-nb-2 border-nb-black shadow-nb-sm';
+      'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
 
     const variantStyles = {
-      default: 'bg-nb-gray-100 text-nb-black',
-      primary: 'bg-nb-blue text-nb-white',
-      success: 'bg-nb-green text-nb-white',
-      warning: 'bg-nb-yellow text-nb-black',
-      error: 'bg-nb-red text-nb-white',
+      default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+      primary: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+      success: 'border-transparent bg-emerald-500 text-white hover:bg-emerald-600',
+      warning: 'border-transparent bg-amber-500 text-white hover:bg-amber-600',
+      error: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
     };
 
     return (

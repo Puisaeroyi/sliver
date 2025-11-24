@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/v1/processor/route';
 import { POST as DownloadPOST } from '@/app/api/v1/processor/download/route';

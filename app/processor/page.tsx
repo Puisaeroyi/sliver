@@ -13,6 +13,12 @@ import {
 } from '@/components/ui';
 import { AttendanceAnalytics } from '@/components/analytics';
 import { AttendanceRecord } from '@/types/attendance';
+import {
+  getAttendanceData,
+  saveAttendanceData,
+  mergeAttendanceRecords,
+  type AttendanceRecord as StoredAttendanceRecord,
+} from '@/lib/utils/attendanceStorage';
 
 interface ProcessingResult {
   success: boolean;
@@ -113,10 +119,57 @@ export default function ProcessorPage() {
       }
 
       setResult(data);
+
+      // Save attendance data to localStorage
+      if (data.result?.outputData && Array.isArray(data.result.outputData)) {
+        saveAttendanceRecordsToStorage(data.result.outputData);
+      }
+
       setIsProcessing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsProcessing(false);
+    }
+  };
+
+  const saveAttendanceRecordsToStorage = (records: AttendanceRecord[]) => {
+    try {
+      // Helper function to format Date to DD/MM/YYYY
+      const formatDate = (date: Date | string): string => {
+        // Always convert to Date object first, then format
+        const d = typeof date === 'string' ? new Date(date) : new Date(date);
+
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      };
+
+      // Map the attendance records to the storage format
+      const mappedRecords: StoredAttendanceRecord[] = records.map((record) => ({
+        date: formatDate(record.date),
+        id: String(record.id),
+        name: String(record.name),
+        shift: String(record.shift),
+        checkIn: record.checkIn || '',
+        breakOut: record.breakOut || '',
+        breakIn: record.breakIn || '',
+        checkOut: record.checkOut || '',
+      }));
+
+      // Get existing data and merge
+      const existingData = getAttendanceData();
+      const mergedRecords = mergeAttendanceRecords(existingData.records, mappedRecords);
+
+      // Save to localStorage
+      saveAttendanceData(mergedRecords);
+
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('attendanceDataUpdated'));
+
+      console.log(`Saved ${mappedRecords.length} attendance records to localStorage`);
+    } catch (err) {
+      console.error('Error saving attendance data:', err);
     }
   };
 
@@ -223,13 +276,12 @@ export default function ProcessorPage() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`cursor-pointer border-nb-4 border-dashed p-nb-12 text-center transition-colors ${
-                  isDragging
+                className={`cursor-pointer border-nb-4 border-dashed p-nb-12 text-center transition-colors ${isDragging
                     ? 'border-nb-green bg-nb-green/20'
                     : file
                       ? 'border-nb-green bg-nb-green/5'
                       : 'border-nb-gray-300 bg-nb-gray-50 hover:border-nb-green hover:bg-nb-green/5'
-                }`}
+                  }`}
               >
                 {file ? (
                   <div>

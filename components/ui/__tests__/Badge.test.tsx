@@ -11,30 +11,29 @@ describe('Badge Component', () => {
   it('applies default variant styles', () => {
     const { container } = render(<Badge>Default</Badge>);
     const badge = container.firstChild as HTMLElement;
-    expect(badge).toHaveClass('bg-nb-gray-100', 'text-nb-black');
+    expect(badge).toHaveClass('bg-primary', 'text-primary-foreground');
   });
 
   it('applies correct variant styles', () => {
     const { rerender } = render(<Badge variant="primary">Primary</Badge>);
-    expect(screen.getByText('Primary')).toHaveClass('bg-nb-blue', 'text-nb-white');
+    expect(screen.getByText('Primary')).toHaveClass('bg-primary', 'text-primary-foreground');
 
     rerender(<Badge variant="success">Success</Badge>);
-    expect(screen.getByText('Success')).toHaveClass('bg-nb-green', 'text-nb-white');
+    expect(screen.getByText('Success')).toHaveClass('bg-emerald-500', 'text-white');
 
     rerender(<Badge variant="warning">Warning</Badge>);
-    expect(screen.getByText('Warning')).toHaveClass('bg-nb-yellow', 'text-nb-black');
+    expect(screen.getByText('Warning')).toHaveClass('bg-amber-500', 'text-white');
 
     rerender(<Badge variant="error">Error</Badge>);
-    expect(screen.getByText('Error')).toHaveClass('bg-nb-red', 'text-nb-white');
+    expect(screen.getByText('Error')).toHaveClass('bg-destructive', 'text-destructive-foreground');
   });
 
-  it('applies base brutalism styles', () => {
-    const { container } = render(<Badge>Brutalist</Badge>);
+  it('applies base styles', () => {
+    const { container } = render(<Badge>Base</Badge>);
     const badge = container.firstChild as HTMLElement;
     expect(badge).toHaveClass('inline-flex');
     expect(badge).toHaveClass('items-center');
-    expect(badge).toHaveClass('border-nb-black');
-    expect(badge).toHaveClass('shadow-nb-sm');
+    expect(badge).toHaveClass('rounded-full');
   });
 
   it('applies custom className', () => {

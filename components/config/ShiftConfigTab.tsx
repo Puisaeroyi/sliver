@@ -104,7 +104,7 @@ export default function ShiftConfigTab({
 
   useEffect(() => {
     loadShifts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadShifts = async () => {
@@ -218,8 +218,8 @@ export default function ShiftConfigTab({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-nb-3">
-            <div className={`w-8 h-8 flex items-center justify-center rounded-nb bg-nb-blue text-nb-white font-bold text-sm`}>
+          <CardTitle className="flex items-center gap-3">
+            <div className={`w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm`}>
               {shiftLetter}
             </div>
             {shiftData.name} Shift
@@ -228,10 +228,10 @@ export default function ShiftConfigTab({
             Configure check-in and check-out times for {shiftData.name.toLowerCase()} shift
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-nb-6">
+        <CardContent className="space-y-6">
           {/* Shift Window */}
           <div>
-            <label className="mb-nb-2 block text-sm font-bold uppercase text-nb-black">
+            <label className="mb-2 block text-sm font-medium text-foreground">
               Shift Window
             </label>
             <Input
@@ -241,19 +241,19 @@ export default function ShiftConfigTab({
               disabled={isLoading}
             />
             {errors[shiftLetter]?.window && (
-              <p className="mt-nb-2 text-sm text-nb-red">{errors[shiftLetter]?.window?.message}</p>
+              <p className="mt-2 text-sm text-destructive">{errors[shiftLetter]?.window?.message}</p>
             )}
           </div>
 
           {/* Check-in Settings */}
           <div>
-            <h4 className="mb-nb-4 font-bold uppercase text-nb-black flex items-center gap-nb-2">
+            <h4 className="mb-4 font-semibold text-foreground flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Check-in Settings
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-nb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="mb-nb-2 block text-xs font-bold uppercase text-nb-gray-700">
+                <label className="mb-2 block text-xs font-medium uppercase text-muted-foreground">
                   Search Range
                 </label>
                 <Input
@@ -263,11 +263,11 @@ export default function ShiftConfigTab({
                   disabled={isLoading}
                 />
                 {errors[shiftLetter]?.check_in?.search_range && (
-                  <p className="mt-nb-2 text-sm text-nb-red">{errors[shiftLetter]?.check_in?.search_range?.message}</p>
+                  <p className="mt-2 text-sm text-destructive">{errors[shiftLetter]?.check_in?.search_range?.message}</p>
                 )}
               </div>
               <div>
-                <label className="mb-nb-2 block text-xs font-bold uppercase text-nb-gray-700">
+                <label className="mb-2 block text-xs font-medium uppercase text-muted-foreground">
                   Shift Start
                 </label>
                 <Input
@@ -277,11 +277,11 @@ export default function ShiftConfigTab({
                   disabled={isLoading}
                 />
                 {errors[shiftLetter]?.check_in?.shift_start && (
-                  <p className="mt-nb-2 text-sm text-nb-red">{errors[shiftLetter]?.check_in?.shift_start?.message}</p>
+                  <p className="mt-2 text-sm text-destructive">{errors[shiftLetter]?.check_in?.shift_start?.message}</p>
                 )}
               </div>
               <div>
-                <label className="mb-nb-2 block text-xs font-bold uppercase text-nb-gray-700">
+                <label className="mb-2 block text-xs font-medium uppercase text-muted-foreground">
                   On-time Cutoff
                 </label>
                 <Input
@@ -291,11 +291,11 @@ export default function ShiftConfigTab({
                   disabled={isLoading}
                 />
                 {errors[shiftLetter]?.check_in?.on_time_cutoff && (
-                  <p className="mt-nb-2 text-sm text-nb-red">{errors[shiftLetter]?.check_in?.on_time_cutoff?.message}</p>
+                  <p className="mt-2 text-sm text-destructive">{errors[shiftLetter]?.check_in?.on_time_cutoff?.message}</p>
                 )}
               </div>
               <div>
-                <label className="mb-nb-2 block text-xs font-bold uppercase text-nb-gray-700">
+                <label className="mb-2 block text-xs font-medium uppercase text-muted-foreground">
                   Late Threshold
                 </label>
                 <Input
@@ -305,7 +305,7 @@ export default function ShiftConfigTab({
                   disabled={isLoading}
                 />
                 {errors[shiftLetter]?.check_in?.late_threshold && (
-                  <p className="mt-nb-2 text-sm text-nb-red">{errors[shiftLetter]?.check_in?.late_threshold?.message}</p>
+                  <p className="mt-2 text-sm text-destructive">{errors[shiftLetter]?.check_in?.late_threshold?.message}</p>
                 )}
               </div>
             </div>
@@ -313,12 +313,12 @@ export default function ShiftConfigTab({
 
           {/* Check-out Settings */}
           <div>
-            <h4 className="mb-nb-4 font-bold uppercase text-nb-black flex items-center gap-nb-2">
+            <h4 className="mb-4 font-semibold text-foreground flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Check-out Settings
             </h4>
             <div>
-              <label className="mb-nb-2 block text-xs font-bold uppercase text-nb-gray-700">
+              <label className="mb-2 block text-xs font-medium uppercase text-muted-foreground">
                 Search Range
               </label>
               <Input
@@ -328,7 +328,7 @@ export default function ShiftConfigTab({
                 disabled={isLoading}
               />
               {errors[shiftLetter]?.check_out?.search_range && (
-                <p className="mt-nb-2 text-sm text-nb-red">{errors[shiftLetter]?.check_out?.search_range?.message}</p>
+                <p className="mt-2 text-sm text-destructive">{errors[shiftLetter]?.check_out?.search_range?.message}</p>
               )}
             </div>
           </div>
@@ -338,26 +338,26 @@ export default function ShiftConfigTab({
   };
 
   return (
-    <div className="space-y-nb-8">
+    <div className="space-y-8">
       {/* Shift Configuration Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="space-y-nb-8">
+        <div className="space-y-8">
           <ShiftEditor shiftLetter="A" />
           <ShiftEditor shiftLetter="B" />
           <ShiftEditor shiftLetter="C" />
         </div>
 
         {/* Action Buttons */}
-        <Card variant="warning">
-          <CardContent className="p-nb-6">
-            <div className="flex flex-col sm:flex-row gap-nb-4">
+        <Card className="mt-8">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 type="submit"
                 variant="primary"
                 disabled={isLoading || !isDirty}
                 className="flex-1"
               >
-                <Save className="h-4 w-4 mr-nb-2" />
+                <Save className="h-4 w-4 mr-2" />
                 {isLoading ? 'Saving...' : 'Save All Shifts'}
               </Button>
               <Button
@@ -367,12 +367,12 @@ export default function ShiftConfigTab({
                 disabled={isLoading}
                 className="flex-1 sm:flex-initial"
               >
-                <RotateCcw className="h-4 w-4 mr-nb-2" />
+                <RotateCcw className="h-4 w-4 mr-2" />
                 Reset to Defaults
               </Button>
             </div>
             {!isDirty && initialData && (
-              <p className="mt-nb-4 text-sm text-nb-gray-600">
+              <p className="mt-4 text-sm text-muted-foreground">
                 No changes to save. Shifts are currently saved with the settings shown above.
               </p>
             )}
@@ -381,10 +381,10 @@ export default function ShiftConfigTab({
       </form>
 
       {/* Help Section */}
-      <Card variant="default">
-        <CardContent className="p-nb-6">
-          <h4 className="mb-nb-4 font-bold uppercase text-nb-black">Time Format Guidelines</h4>
-          <div className="space-y-nb-3 text-sm text-nb-gray-700">
+      <Card>
+        <CardContent className="p-6">
+          <h4 className="mb-4 font-semibold text-foreground">Time Format Guidelines</h4>
+          <div className="space-y-3 text-sm text-muted-foreground">
             <div>
               <strong>Search Range:</strong> HH:MM-HH:MM (e.g., 05:30-06:35)
             </div>
@@ -397,7 +397,7 @@ export default function ShiftConfigTab({
             <div>
               <strong>Late Threshold:</strong> HH:MM:SS (e.g., 06:05:00)
             </div>
-            <div className="mt-nb-4 p-nb-4 bg-nb-yellow/20 border-nb-2 border-nb-yellow rounded-nb">
+            <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-600 dark:text-amber-400">
               <strong>Note:</strong> Changes to shift times will immediately affect attendance processing.
               Ensure all time ranges are logical and non-overlapping between shifts.
             </div>

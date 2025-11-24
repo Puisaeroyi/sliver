@@ -1,31 +1,21 @@
 import type { Metadata } from 'next';
-import { Inter, Poppins, JetBrains_Mono } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/layout/Header';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
-const inter = Inter({
-  variable: '--font-inter',
+const geistSans = Geist({
+  variable: '--font-geist-sans',
   subsets: ['latin'],
-  display: 'swap',
 });
 
-const poppins = Poppins({
-  variable: '--font-poppins',
-  weight: ['400', '500', '600', '700', '900'],
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
   subsets: ['latin'],
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-jetbrains-mono',
-  subsets: ['latin'],
-  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Attendance Processor Pro - CSV Converter & Attendance Management',
-  description:
-    'Modern web application for processing attendance data and converting CSV files with Neo Brutalism design.',
+  title: 'Attendance Processor Pro',
+  description: 'Modern attendance processing dashboard',
 };
 
 export default function RootLayout({
@@ -35,11 +25,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable}`}>
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1">{children}</main>
-        </div>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <DashboardLayout>{children}</DashboardLayout>
       </body>
     </html>
   );

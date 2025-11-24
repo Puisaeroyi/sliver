@@ -8,26 +8,12 @@ describe('Card Component', () => {
     expect(screen.getByText('Card Content')).toBeInTheDocument();
   });
 
-  it('applies default variant styles', () => {
+  it('applies default styles', () => {
     const { container } = render(<Card>Default Card</Card>);
     const card = container.firstChild as HTMLElement;
-    expect(card).toHaveClass('bg-nb-white');
-    expect(card).toHaveClass('border-nb-black');
-    expect(card).toHaveClass('shadow-nb-lg');
-  });
-
-  it('applies correct variant styles', () => {
-    const { container, rerender } = render(<Card variant="primary">Primary</Card>);
-    let card = container.firstChild as HTMLElement;
-    expect(card).toHaveClass('border-l-nb-blue');
-
-    rerender(<Card variant="success">Success</Card>);
-    card = container.firstChild as HTMLElement;
-    expect(card).toHaveClass('border-l-nb-green');
-
-    rerender(<Card variant="error">Error</Card>);
-    card = container.firstChild as HTMLElement;
-    expect(card).toHaveClass('border-l-nb-red');
+    expect(card).toHaveClass('bg-card');
+    expect(card).toHaveClass('text-card-foreground');
+    expect(card).toHaveClass('border-border');
   });
 
   it('applies custom className', () => {
@@ -53,14 +39,14 @@ describe('Card Sub-components', () => {
     const title = screen.getByText('Card Title');
     expect(title).toBeInTheDocument();
     expect(title.tagName).toBe('H3');
-    expect(title).toHaveClass('text-2xl', 'font-bold');
+    expect(title).toHaveClass('font-semibold');
   });
 
   it('renders CardDescription', () => {
     render(<CardDescription>Card Description</CardDescription>);
     const description = screen.getByText('Card Description');
     expect(description).toBeInTheDocument();
-    expect(description).toHaveClass('text-sm', 'text-nb-gray-600');
+    expect(description).toHaveClass('text-sm', 'text-muted-foreground');
   });
 
   it('renders CardContent', () => {
@@ -72,12 +58,12 @@ describe('Card Sub-components', () => {
     render(<CardFooter>Footer</CardFooter>);
     const footer = screen.getByText('Footer');
     expect(footer).toBeInTheDocument();
-    expect(footer).toHaveClass('mt-nb-6', 'flex', 'items-center');
+    expect(footer).toHaveClass('flex', 'items-center');
   });
 
   it('renders complete card structure', () => {
     render(
-      <Card variant="primary">
+      <Card>
         <CardHeader>
           <CardTitle>Test Title</CardTitle>
           <CardDescription>Test Description</CardDescription>

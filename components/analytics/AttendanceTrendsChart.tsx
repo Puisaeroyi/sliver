@@ -2,12 +2,13 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendData } from '@/types/attendance';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 
 interface AttendanceTrendsChartProps {
   data: TrendData[];
 }
 
-// Colors for user lines (Design guideline palette)
+// Colors for user lines (Modern palette)
 const USER_COLORS: Record<string, string> = {
   'Bui Duc Toan': '#3B82F6',        // Blue
   'Pham Tan Phat': '#EF4444',       // Red
@@ -19,14 +20,16 @@ export default function AttendanceTrendsChart({ data }: AttendanceTrendsChartPro
   // Only show if we have multi-day data
   if (!data || data.length < 2) {
     return (
-      <div className="bg-nb-white border-nb-4 border-nb-black shadow-nb p-nb-6">
-        <h3 className="mb-nb-4 font-display text-xl font-black uppercase tracking-tight text-nb-black">
-          Attendance Trends
-        </h3>
-        <div className="flex items-center justify-center h-64 text-nb-gray-500 font-bold">
-          <p>Multi-day data required for trend analysis</p>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Attendance Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-muted-foreground font-medium">
+            <p>Multi-day data required for trend analysis</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -34,71 +37,70 @@ export default function AttendanceTrendsChart({ data }: AttendanceTrendsChartPro
   const userNames = Object.keys(data[0] || {}).filter((key) => key !== 'date');
 
   return (
-    <div className="bg-nb-white border-nb-4 border-nb-black shadow-nb p-nb-6">
-      <h3 className="mb-nb-4 font-display text-xl font-black uppercase tracking-tight text-nb-black">
-        Attendance Trends Over Time
-      </h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={data}
-          margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#d1d1d1"
-            strokeWidth={1}
-          />
-          <XAxis
-            dataKey="date"
-            stroke="#000000"
-            strokeWidth={3}
-            tick={{ fill: '#000000', fontWeight: 'bold', fontSize: 12 }}
-            angle={-45}
-            textAnchor="end"
-            height={80}
-          />
-          <YAxis
-            stroke="#000000"
-            strokeWidth={3}
-            tick={{ fill: '#000000', fontWeight: 'bold', fontSize: 12 }}
-            label={{
-              value: 'ATTENDANCE COUNT',
-              angle: -90,
-              position: 'insideLeft',
-              style: { fill: '#000000', fontWeight: 'bold', fontSize: 12 },
-            }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#ffffff',
-              border: '4px solid #000000',
-              borderRadius: '0',
-              boxShadow: '4px 4px 0px #000000',
-              fontWeight: 'bold',
-            }}
-            labelStyle={{ color: '#000000', fontWeight: 'bold', textTransform: 'uppercase' }}
-            itemStyle={{ color: '#000000' }}
-          />
-          <Legend
-            wrapperStyle={{
-              paddingTop: '10px',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-            }}
-          />
-          {userNames.map((userName) => (
-            <Line
-              key={userName}
-              type="monotone"
-              dataKey={userName}
-              stroke={USER_COLORS[userName] || '#8E8E93'}
-              strokeWidth={3}
-              dot={{ fill: '#ffffff', stroke: USER_COLORS[userName] || '#8E8E93', strokeWidth: 3, r: 5 }}
-              activeDot={{ r: 7, strokeWidth: 3 }}
+    <Card>
+      <CardHeader>
+        <CardTitle>Attendance Trends Over Time</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart
+            data={data}
+            margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(var(--border))"
+              strokeWidth={1}
             />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+            <XAxis
+              dataKey="date"
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth={1}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              angle={-45}
+              textAnchor="end"
+              height={80}
+            />
+            <YAxis
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth={1}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              label={{
+                value: 'ATTENDANCE COUNT',
+                angle: -90,
+                position: 'insideLeft',
+                style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 },
+              }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '0.5rem',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              }}
+              labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
+              itemStyle={{ color: 'hsl(var(--foreground))' }}
+            />
+            <Legend
+              wrapperStyle={{
+                paddingTop: '10px',
+              }}
+            />
+            {userNames.map((userName) => (
+              <Line
+                key={userName}
+                type="monotone"
+                dataKey={userName}
+                stroke={USER_COLORS[userName] || '#8E8E93'}
+                strokeWidth={2}
+                dot={{ fill: 'hsl(var(--background))', stroke: USER_COLORS[userName] || '#8E8E93', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, strokeWidth: 2 }}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 }

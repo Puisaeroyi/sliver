@@ -23,7 +23,7 @@ const UserFormSchema = z.object({
 
 type UserFormData = z.infer<typeof UserFormSchema>;
 
-interface User {
+interface UserType {
   username: string;
   output_name: string;
   output_id: string;
@@ -40,8 +40,8 @@ export default function UserManagementTab({
   isLoading,
   setIsLoading,
 }: UserManagementTabProps) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -61,7 +61,7 @@ export default function UserManagementTab({
   // Load users on component mount
   useEffect(() => {
     loadUsers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadUsers = async () => {
@@ -180,7 +180,7 @@ export default function UserManagementTab({
     }
   };
 
-  const startEdit = (user: User) => {
+  const startEdit = (user: UserType) => {
     setEditingUser(user);
     setIsAddingUser(false);
     reset({
@@ -202,13 +202,13 @@ export default function UserManagementTab({
   };
 
   return (
-    <div className="space-y-nb-8">
+    <div className="space-y-8">
       {/* User List */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-nb-3">
+              <CardTitle className="flex items-center gap-3">
                 <Users className="h-6 w-6" />
                 Current Users
               </CardTitle>
@@ -221,35 +221,34 @@ export default function UserManagementTab({
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
-            <div className="text-center py-nb-8 text-nb-gray-500">
-              <User className="h-12 w-12 mx-auto mb-nb-4 opacity-50" />
+            <div className="text-center py-8 text-muted-foreground">
+              <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No users configured</p>
               <p className="text-sm">Click &quot;Add User&quot; to get started</p>
             </div>
           ) : (
-            <div className="space-y-nb-4">
+            <div className="space-y-4">
               {users.map((user) => (
                 <div
                   key={user.username}
-                  className={`border-nb-2 border-dashed p-nb-4 ${
-                    editingUser?.username === user.username
-                      ? 'border-nb-blue bg-nb-blue/5'
-                      : 'border-nb-gray-300 bg-nb-white'
-                  }`}
+                  className={`border rounded-lg p-4 transition-colors ${editingUser?.username === user.username
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:bg-accent/50'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-nb-black">{user.output_name}</h4>
-                      <div className="flex items-center gap-nb-4 text-sm text-nb-gray-600">
+                      <h4 className="font-semibold text-foreground">{user.output_name}</h4>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>
-                          <strong>Username:</strong> {user.username}
+                          <span className="font-medium">Username:</span> {user.username}
                         </span>
                         <span>
-                          <strong>ID:</strong> {user.output_id}
+                          <span className="font-medium">ID:</span> {user.output_id}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-nb-2">
+                    <div className="flex items-center gap-2">
                       {editingUser?.username === user.username ? (
                         <Button
                           variant="secondary"
@@ -257,7 +256,7 @@ export default function UserManagementTab({
                           onClick={cancelEdit}
                           disabled={isLoading}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-4 w-4 mr-2" />
                           Cancel
                         </Button>
                       ) : (
@@ -268,7 +267,7 @@ export default function UserManagementTab({
                             onClick={() => startEdit(user)}
                             disabled={isLoading || isAddingUser}
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <Edit2 className="h-4 w-4 mr-2" />
                             Edit
                           </Button>
                           <Button
@@ -292,9 +291,9 @@ export default function UserManagementTab({
 
       {/* Add/Edit User Form */}
       {(isAddingUser || editingUser) && (
-        <Card variant="success">
+        <Card className="border-primary/20 bg-primary/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-nb-3">
+            <CardTitle className="flex items-center gap-3">
               {isAddingUser ? <Plus className="h-6 w-6" /> : <Edit2 className="h-6 w-6" />}
               {isAddingUser ? 'Add New User' : 'Edit User'}
             </CardTitle>
@@ -305,9 +304,9 @@ export default function UserManagementTab({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-nb-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
-                <label className="mb-nb-2 block text-sm font-bold uppercase text-nb-black">
+                <label className="mb-2 block text-sm font-medium text-foreground">
                   Display Name
                 </label>
                 <Input
@@ -317,12 +316,12 @@ export default function UserManagementTab({
                   disabled={isLoading}
                 />
                 {errors.output_name && (
-                  <p className="mt-nb-2 text-sm text-nb-red">{errors.output_name.message}</p>
+                  <p className="mt-2 text-sm text-destructive">{errors.output_name.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-nb-2 block text-sm font-bold uppercase text-nb-black">
+                <label className="mb-2 block text-sm font-medium text-foreground">
                   Employee ID
                 </label>
                 <Input
@@ -332,18 +331,18 @@ export default function UserManagementTab({
                   disabled={isLoading}
                 />
                 {errors.output_id && (
-                  <p className="mt-nb-2 text-sm text-nb-red">{errors.output_id.message}</p>
+                  <p className="mt-2 text-sm text-destructive">{errors.output_id.message}</p>
                 )}
               </div>
 
-              <div className="flex gap-nb-4">
+              <div className="flex gap-4">
                 <Button
                   type="submit"
                   variant="primary"
                   disabled={isLoading || !isDirty}
                   className="flex-1"
                 >
-                  <Save className="h-4 w-4 mr-nb-2" />
+                  <Save className="h-4 w-4 mr-2" />
                   {isLoading ? 'Saving...' : 'Save User'}
                 </Button>
                 <Button
@@ -352,7 +351,7 @@ export default function UserManagementTab({
                   onClick={cancelEdit}
                   disabled={isLoading}
                 >
-                  <X className="h-4 w-4 mr-nb-2" />
+                  <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
               </div>
@@ -369,29 +368,29 @@ export default function UserManagementTab({
           onClick={startAdd}
           disabled={isLoading}
         >
-          <Plus className="h-5 w-5 mr-nb-2" />
+          <Plus className="h-5 w-5 mr-2" />
           Add New User
         </Button>
       )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-nb-4 z-50">
-          <Card className="max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <Card className="max-w-md w-full border-destructive/50 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-nb-red">Confirm Delete</CardTitle>
+              <CardTitle className="text-destructive">Confirm Delete</CardTitle>
               <CardDescription>
                 Are you sure you want to delete this user? This action cannot be undone.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-nb-4">
-              <p className="font-bold">
+            <CardContent className="space-y-4">
+              <p className="font-bold text-foreground">
                 {users.find(u => u.username === deleteConfirm)?.output_name}
               </p>
-              <p className="text-sm text-nb-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Username: {deleteConfirm}
               </p>
-              <div className="flex gap-nb-4">
+              <div className="flex gap-4">
                 <Button
                   variant="error"
                   className="flex-1"

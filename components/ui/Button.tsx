@@ -2,33 +2,31 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg' | 'icon';
   children: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', children, disabled, ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-bold uppercase tracking-wide transition-all duration-150 ease-out border-nb-4 border-nb-black shadow-nb focus-visible:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+      'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
     const variantStyles = {
-      primary:
-        'bg-nb-blue text-nb-white hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-nb-lg active:translate-x-0 active:translate-y-0 active:shadow-nb-sm focus-visible:outline-nb-blue',
-      secondary:
-        'bg-nb-purple text-nb-white hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-nb-lg active:translate-x-0 active:translate-y-0 active:shadow-nb-sm focus-visible:outline-nb-purple',
-      success:
-        'bg-nb-green text-nb-white hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-nb-lg active:translate-x-0 active:translate-y-0 active:shadow-nb-sm focus-visible:outline-nb-green',
-      warning:
-        'bg-nb-yellow text-nb-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-nb-lg active:translate-x-0 active:translate-y-0 active:shadow-nb-sm focus-visible:outline-nb-yellow',
-      error:
-        'bg-nb-red text-nb-white hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-nb-lg active:translate-x-0 active:translate-y-0 active:shadow-nb-sm focus-visible:outline-nb-red',
+      primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+      secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+      success: 'bg-emerald-500 text-white hover:bg-emerald-600',
+      warning: 'bg-amber-500 text-white hover:bg-amber-600',
+      error: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+      outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+      ghost: 'hover:bg-accent hover:text-accent-foreground',
     };
 
     const sizeStyles = {
-      sm: 'px-nb-4 py-nb-2 text-sm',
-      md: 'px-nb-6 py-nb-3 text-base',
-      lg: 'px-nb-8 py-nb-4 text-lg',
+      sm: 'h-9 rounded-md px-3',
+      md: 'h-10 px-4 py-2',
+      lg: 'h-11 rounded-md px-8',
+      icon: 'h-10 w-10',
     };
 
     return (

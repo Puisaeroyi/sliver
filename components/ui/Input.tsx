@@ -12,16 +12,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || generatedId;
 
     const baseStyles =
-      'w-full bg-nb-white border-nb-4 border-nb-black px-nb-4 py-nb-3 text-base font-medium transition-all duration-150 ease-out placeholder:text-nb-gray-400 focus:outline-none focus:border-nb-blue focus:shadow-nb-blue disabled:opacity-50 disabled:cursor-not-allowed';
+      'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
-    const errorStyles = error ? 'border-nb-red focus:border-nb-red focus:shadow-nb-red' : '';
+    const errorStyles = error ? 'border-destructive focus-visible:ring-destructive' : '';
 
     return (
-      <div className="w-full">
+      <div className="w-full space-y-2">
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-nb-2 block text-sm font-bold uppercase tracking-wide text-nb-black"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             {label}
           </label>
@@ -33,7 +33,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className={cn(baseStyles, errorStyles, className)}
           {...props}
         />
-        {error && <p className="mt-nb-2 text-sm font-medium text-nb-red">{error}</p>}
+        {error && <p className="text-sm font-medium text-destructive">{error}</p>}
       </div>
     );
   }

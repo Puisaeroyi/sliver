@@ -12,26 +12,26 @@ describe('Button Component', () => {
   it('applies primary variant styles by default', () => {
     render(<Button>Primary</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-nb-blue');
+    expect(button).toHaveClass('bg-primary');
   });
 
   it('applies correct variant styles', () => {
     const { rerender } = render(<Button variant="success">Success</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-nb-green');
+    expect(screen.getByRole('button')).toHaveClass('bg-emerald-500');
 
     rerender(<Button variant="error">Error</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-nb-red');
+    expect(screen.getByRole('button')).toHaveClass('bg-destructive');
 
     rerender(<Button variant="warning">Warning</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-nb-yellow');
+    expect(screen.getByRole('button')).toHaveClass('bg-amber-500');
   });
 
   it('applies correct size styles', () => {
     const { rerender } = render(<Button size="sm">Small</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-nb-4', 'py-nb-2');
+    expect(screen.getByRole('button')).toHaveClass('h-9', 'px-3');
 
     rerender(<Button size="lg">Large</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-nb-8', 'py-nb-4');
+    expect(screen.getByRole('button')).toHaveClass('h-11', 'px-8');
   });
 
   it('handles click events', async () => {

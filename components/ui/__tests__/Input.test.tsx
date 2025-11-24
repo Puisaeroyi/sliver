@@ -23,7 +23,7 @@ describe('Input Component', () => {
   it('applies error styles when error prop is provided', () => {
     render(<Input error="Error message" />);
     const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('border-nb-red');
+    expect(input).toHaveClass('border-destructive');
   });
 
   it('handles user input', async () => {
